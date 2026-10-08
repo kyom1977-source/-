@@ -1,0 +1,8 @@
+{
+  "name": "스마트 자리 바꾸기 - 스마트 교실 배치 시스템",
+  "description": "이전 짝꿍 중복 방지와 자리 누락 0명을 보장하는 초·중·고 학급 스마트 자리 배치 및 교실 관리 웹 애플리케이션",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

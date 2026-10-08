@@ -1,0 +1,126 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['userId', 'email', 'createdAt', 'updatedAt']) &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.email is string && data.email.size() <= 256 &&
+             data.createdAt is string && data.createdAt.size() <= 64 &&
+             data.updatedAt is string && data.updatedAt.size() <= 64 &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100));
+    }
+
+    function isValidClassroom(data) {
+      return data.keys().hasAll(['id', 'teacherId', 'name', 'createdAt', 'updatedAt']) &&
+             data.id is string && data.id.size() <= 64 &&
+             data.teacherId is string && data.teacherId == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.createdAt is string && data.createdAt.size() <= 64 &&
+             data.updatedAt is string && data.updatedAt.size() <= 64 &&
+             (!('grade' in data) || (data.grade is string && data.grade.size() <= 20)) &&
+             (!('academicYear' in data) || (data.academicYear is number)) &&
+             (!('layoutConfig' in data) || (data.layoutConfig is map));
+    }
+
+    function isValidStudent(data) {
+      return data.keys().hasAll(['id', 'classId', 'teacherId', 'studentNumber', 'name', 'gender']) &&
+             data.id is string && data.id.size() <= 64 &&
+             data.classId is string && data.classId.size() <= 64 &&
+             data.teacherId is string && data.teacherId == request.auth.uid &&
+             data.studentNumber is number &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 50 &&
+             data.gender in ['M', 'F', 'OTHER'] &&
+             (!('frontRowPreference' in data) || (data.frontRowPreference is bool)) &&
+             (!('avoidStudentIds' in data) || (data.avoidStudentIds is list && data.avoidStudentIds.size() <= 30)) &&
+             (!('pinnedSeatId' in data) || (data.pinnedSeatId is string && data.pinnedSeatId.size() <= 50)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 200)) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidArrangement(data) {
+      return data.keys().hasAll(['id', 'classId', 'teacherId', 'title', 'createdAt', 'seats']) &&
+             data.id is string && data.id.size() <= 64 &&
+             data.classId is string && data.classId.size() <= 64 &&
+             data.teacherId is string && data.teacherId == request.auth.uid &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 100 &&
+             data.createdAt is string && data.createdAt.size() <= 64 &&
+             data.seats is list && data.seats.size() <= 100 &&
+             (!('pairs' in data) || (data.pairs is list && data.pairs.size() <= 60)) &&
+             (!('rulesSummary' in data) || (data.rulesSummary is map));
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId;
+      allow list: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidUser(incoming());
+      allow update: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt;
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /classes/{classId} {
+      allow get: if isSignedIn() && resource.data.teacherId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.teacherId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(classId) && isValidClassroom(incoming()) &&
+                       incoming().teacherId == request.auth.uid;
+      allow update: if isSignedIn() && isValidClassroom(incoming()) &&
+                       existing().teacherId == request.auth.uid &&
+                       incoming().teacherId == existing().teacherId &&
+                       incoming().id == existing().id &&
+                       incoming().createdAt == existing().createdAt;
+      allow delete: if isSignedIn() && existing().teacherId == request.auth.uid;
+
+      match /students/{studentId} {
+        allow get: if isSignedIn() && resource.data.teacherId == request.auth.uid;
+        allow list: if isSignedIn() && resource.data.teacherId == request.auth.uid;
+        allow create: if isSignedIn() && isValidId(studentId) && isValidStudent(incoming()) &&
+                         incoming().teacherId == request.auth.uid &&
+                         incoming().classId == classId &&
+                         get(/databases/$(database)/documents/classes/$(classId)).data.teacherId == request.auth.uid;
+        allow update: if isSignedIn() && isValidStudent(incoming()) &&
+                         existing().teacherId == request.auth.uid &&
+                         incoming().teacherId == existing().teacherId &&
+                         incoming().classId == existing().classId &&
+                         incoming().id == existing().id;
+        allow delete: if isSignedIn() && existing().teacherId == request.auth.uid;
+      }
+
+      match /arrangements/{arrangementId} {
+        allow get: if isSignedIn() && resource.data.teacherId == request.auth.uid;
+        allow list: if isSignedIn() && resource.data.teacherId == request.auth.uid;
+        allow create: if isSignedIn() && isValidId(arrangementId) && isValidArrangement(incoming()) &&
+                         incoming().teacherId == request.auth.uid &&
+                         incoming().classId == classId &&
+                         get(/databases/$(database)/documents/classes/$(classId)).data.teacherId == request.auth.uid;
+        allow update: if isSignedIn() && isValidArrangement(incoming()) &&
+                         existing().teacherId == request.auth.uid &&
+                         incoming().teacherId == existing().teacherId &&
+                         incoming().classId == existing().classId &&
+                         incoming().id == existing().id;
+        allow delete: if isSignedIn() && existing().teacherId == request.auth.uid;
+      }
+    }
+  }
+}

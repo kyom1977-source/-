@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>스마트 자리 바꾸기 - 스마트 교실 배치 시스템</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google GenAI SDK ImportMap -->
+  <script type="importmap">
+    {
+      "imports": {
+        "@google/genai": "https://esm.sh/@google/genai"
+      }
+    }
+  </script>
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    * { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-[#F6F9F5] text-[#1E293B] min-h-screen flex flex-col selection:bg-[#436850] selection:text-white">
+
+  <!-- ================= TOP HEADER ================= -->
+  <header class="bg-white border-b border-[#E2E8F0] shadow-xs sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#E28055] to-[#D96B43] flex items-center justify-center text-white shadow-xs">
+          <i data-lucide="users" class="w-6 h-6 stroke-[2.2]"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-black text-[#1E293B] tracking-tight">스마트 자리 바꾸기</h1>
+          <p class="text-xs text-slate-500 font-medium">교사 맞춤 스마트 학급 배치 시스템</p>
+        </div>
+      </div>
+
+      <div class="flex items-center flex-wrap gap-2.5">
+        <div class="flex items-center gap-1.5 px-3 py-1.5 bg-[#EDF5F0] border border-[#CFE4D6] text-[#436850] rounded-full text-xs font-bold">
+          <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
+          <span id="headerStudentBadge">등록 학생: 20명</span>
+        </div>
+        <div class="flex items-center gap-1.5 px-3 py-1.5 bg-[#FDF7ED] border border-[#F6E7C9] text-[#A98235] rounded-full text-xs font-bold">
+          <i data-lucide="glasses" class="w-3.5 h-3.5"></i>
+          <span id="headerConditionBadge">배려 조건: 0건</span>
+        </div>
+        <div class="flex items-center gap-1.5 px-3 py-1.5 bg-[#FDF3F3] border border-[#FAD8D8] text-[#D84D4D] rounded-full text-xs font-bold">
+          <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+          <span id="headerHistoryBadge">저장 기록: 0건</span>
+        </div>
+        <button id="btnGasSync" onclick="saveToGas()" class="flex items-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-[#FDF3F3] border border-[#FAD8D8] text-[#D84D4D] rounded-full text-xs font-bold transition shadow-2xs">
+          <i data-lucide="cloud-upload" class="w-3.5 h-3.5"></i>
+          <span id="syncStatusText">구글 시트/클라우드 저장</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTAINER ================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- 3 STEP NAVIGATION TABS -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+      <button id="tabBtn1" onclick="switchStep(1)" class="py-3.5 px-6 rounded-2xl font-bold text-sm sm:text-base flex items-center justify-center gap-2.5 transition-all shadow-2xs bg-white text-slate-700 border border-[#E5EBE5] hover:bg-slate-50">
+        <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black bg-[#EDF5F0] text-[#436850]">1</span>
+        <span>학생 명단 관리</span>
+        <span id="tab1Badge" class="text-xs px-2 py-0.5 rounded-full font-semibold bg-[#EDF5F0] text-[#436850]">20명</span>
+      </button>
+
+      <button id="tabBtn2" onclick="switchStep(2)" class="py-3.5 px-6 rounded-2xl font-bold text-sm sm:text-base flex items-center justify-center gap-2.5 transition-all shadow-2xs bg-[#436850] text-white shadow-xs">
+        <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black bg-white/25 text-white">2</span>
+        <span>교실 구조 & 기본 설정</span>
+      </button>
+
+      <button id="tabBtn3" onclick="switchStep(3)" class="py-3.5 px-6 rounded-2xl font-bold text-sm sm:text-base flex items-center justify-center gap-2.5 transition-all shadow-2xs bg-white text-slate-700 border border-[#E5EBE5] hover:bg-slate-50">
+        <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black bg-[#EDF5F0] text-[#436850]">3</span>
+        <span>특수 조건 & 자리 뽑기</span>
+      </button>
+    </div>
+
+    <!-- ================= STEP 1: STUDENT MANAGER ================= -->
+    <section id="step1View" class="hidden bg-white rounded-3xl p-6 sm:p-8 border border-[#E2E8F0] shadow-xs space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
+        <div class="flex items-center gap-3">
+          <span class="w-8 h-8 rounded-full bg-[#436850] text-white flex items-center justify-center font-black text-sm">1</span>
+          <h2 class="text-lg font-bold text-[#1E293B]">
+            학생 명단 관리
+            <span class="text-xs font-normal text-slate-400 ml-2">선생님 계정 클라우드 자동 동기화 지원</span>
+          </h2>
+        </div>
+        <button onclick="clearAllStudents()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl border border-rose-200 transition">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          <span>전체 삭제</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div class="lg:col-span-5 space-y-5">
+          <form onsubmit="handleAddSingle(event)" class="flex items-center gap-2">
+            <input id="singleNameInput" type="text" placeholder="학생 이름 (예: 홍길동)" class="flex-1 px-3.5 py-2.5 text-sm border border-[#E2E8F0] rounded-xl focus:ring-2 focus:ring-[#436850] outline-none" required />
+            <select id="singleGenderSelect" class="px-3 py-2.5 text-sm border border-[#E2E8F0] rounded-xl font-medium outline-none">
+              <option value="M">👦 남</option>
+              <option value="F">👧 여</option>
+            </select>
+            <button type="submit" class="px-4 py-2.5 bg-[#436850] hover:bg-[#375642] text-white rounded-xl text-sm font-bold shadow-2xs transition flex items-center gap-1">
+              <i data-lucide="plus" class="w-4 h-4"></i> 추가
+            </button>
+          </form>
+
+          <div class="p-4 bg-[#F8FAF8] rounded-2xl border border-[#E2E8F0] space-y-3">
+            <div class="flex items-center justify-between text-xs font-bold text-slate-800">
+              <span class="flex items-center gap-1.5"><i data-lucide="users" class="w-4 h-4 text-[#436850]"></i> 명단 붙여넣기 (일괄 등록)</span>
+              <button type="button" onclick="loadSampleStudents()" class="text-[#436850] hover:underline flex items-center gap-1">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i> 샘플 20명 불러오기
+              </button>
+            </div>
+            <textarea id="batchTextarea" rows="5" placeholder="엑셀 명단, 줄바꿈, 쉼표로 자유롭게 붙여넣으세요.&#10;예: 김철수 이영희 박민수 최지우 강서아" class="w-full p-3 text-xs border border-[#E2E8F0] rounded-xl outline-none focus:ring-2 focus:ring-[#436850] font-mono"></textarea>
+            <div class="space-y-2">
+              <select id="batchGenderMode" class="w-full px-3 py-2 text-xs border border-[#E2E8F0] rounded-xl">
+                <option value="auto">이름 기반 성별 자동 판단</option>
+                <option value="male">모두 남학생으로 등록</option>
+                <option value="female">모두 여학생으로 등록</option>
+              </select>
+              <button type="button" onclick="handleBatchImport()" class="w-full py-2.5 bg-[#436850] hover:bg-[#375642] text-white rounded-xl text-xs sm:text-sm font-bold shadow-2xs transition">일괄 추가</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-7 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
+              <div id="rosterTitle" class="text-sm font-bold text-slate-800">등록 학생 목록 (총 20명)</div>
+              <div id="genderCounts" class="flex items-center gap-3 text-xs font-bold">
+                <span class="text-blue-600">♂ 남 10명</span>
+                <span class="text-rose-600">♀ 여 10명</span>
+              </div>
+            </div>
+            <div id="studentsGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-h-[380px] overflow-y-auto pr-1"></div>
+          </div>
+
+          <div class="flex justify-end pt-4 border-t border-slate-100">
+            <button onclick="switchStep(2)" class="flex items-center gap-2 px-6 py-3 bg-[#436850] hover:bg-[#375642] text-white rounded-xl text-sm font-bold shadow-xs transition">
+              <span>2단계 교실 구조 설정으로 이동</span>
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= STEP 2: CLASSROOM VIEW ================= -->
+    <section id="step2View" class="bg-white rounded-3xl p-6 sm:p-8 border border-[#E2E8F0] shadow-xs space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
+        <div class="flex items-center gap-3">
+          <span class="w-8 h-8 rounded-full bg-[#436850] text-white flex items-center justify-center font-black text-sm">2</span>
+          <h2 class="text-lg font-bold text-[#1E293B]">교실 구조 & 기본 설정</h2>
+        </div>
+        <button onclick="switchStep(3)" class="flex items-center gap-1.5 px-4 py-2 bg-[#EDF5F0] hover:bg-[#DCECE2] text-[#436850] rounded-xl text-xs sm:text-sm font-bold border border-[#CFE4D6] transition">
+          <span>3단계 특수 조건 설정하기</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Controls Row -->
+      <div class="p-4 bg-[#F8FAF8] rounded-2xl border border-[#E2E8F0] grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-3.5 items-end text-xs">
+        <div class="lg:col-span-2">
+          <label class="block font-semibold text-slate-700 mb-1">적용 월/날짜</label>
+          <input id="dateTextInput" type="text" value="2026년 10월" class="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-xl font-medium text-slate-800 text-xs focus:ring-1 focus:ring-[#436850]" />
+        </div>
+
+        <div class="lg:col-span-2">
+          <label class="block font-semibold text-slate-700 mb-1">책상 배치 방식</label>
+          <select id="deskModeSelect" class="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-xl font-medium text-slate-800 text-xs">
+            <option value="pair">2인 1조 (밀착 짝꿍형)</option>
+            <option value="single">1인 1책상 (시험/개별형)</option>
+          </select>
+        </div>
+
+        <div class="lg:col-span-1.5">
+          <label class="block font-semibold text-slate-700 mb-1">분단 수 (열)</label>
+          <select id="groupsCountSelect" onchange="updateGroupCount(this.value)" class="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-xl font-medium text-slate-800 text-xs">
+            <option value="2">2 분단</option>
+            <option value="3" selected>3 분단</option>
+            <option value="4">4 분단</option>
+            <option value="5">5 분단</option>
+          </select>
+        </div>
+
+        <div class="lg:col-span-1.5">
+          <label class="block font-semibold text-slate-700 mb-1">행 개수 (줄)</label>
+          <select id="rowsCountSelect" onchange="updateRowCount(this.value)" class="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-xl font-medium text-slate-800 text-xs">
+            <option value="3">3 행 (3줄)</option>
+            <option value="4" selected>4 행 (4줄)</option>
+            <option value="5">5 행 (5줄)</option>
+            <option value="6">6 행 (6줄)</option>
+            <option value="7">7 행 (7줄)</option>
+          </select>
+        </div>
+
+        <div class="lg:col-span-3">
+          <label class="block font-semibold text-slate-700 mb-1">성별 매칭 & 좌우 고정</label>
+          <select id="genderRuleSelect" class="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-xl font-medium text-slate-800 text-xs">
+            <option value="coed_male_left" selected>남-여 (왼쪽: 남 / 오른쪽: 여)</option>
+            <option value="coed_female_left">여-남 (왼쪽: 여 / 오른쪽: 남)</option>
+            <option value="same_gender">동성 (남-남 / 여-여)</option>
+            <option value="none">성별 무관 (혼합)</option>
+          </select>
+        </div>
+
+        <div class="lg:col-span-1.5 flex items-center h-9 px-3 bg-white border border-[#E2E8F0] rounded-xl">
+          <label class="flex items-center gap-1.5 cursor-pointer font-semibold text-slate-700 whitespace-nowrap">
+            <input id="avoidPastCheck" type="checkbox" checked class="rounded text-[#436850]" />
+            <span>🛡️ 과거 짝 중복 방지</span>
+          </label>
+        </div>
+
+        <div class="lg:col-span-1.5 flex items-center h-9 px-3 bg-white border border-[#E2E8F0] rounded-xl">
+          <label class="flex items-center gap-1.5 cursor-pointer font-semibold text-slate-700 whitespace-nowrap">
+            <input id="applySeparationCheck" type="checkbox" checked class="rounded text-[#436850]" />
+            <span>🎉 분리 조건 적용</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Action Bar -->
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="unpinAllSeats()" class="flex items-center gap-1 px-3 py-1.5 bg-[#FFF8F8] border border-[#FBD5D5] text-[#E85B51] hover:bg-[#FDF2F2] rounded-full text-xs font-bold transition shadow-2xs">
+            <i data-lucide="pin-off" class="w-3.5 h-3.5"></i> 고정 전체 해제
+          </button>
+          <button onclick="toggleMasked()" class="flex items-center gap-1 px-3 py-1.5 bg-[#F6F9FE] border border-[#D4E2F9] text-[#3B71CA] rounded-full text-xs font-bold transition shadow-2xs">
+            <i data-lucide="eye-off" class="w-3.5 h-3.5"></i> <span id="maskBtnText">전체 숨기기</span>
+          </button>
+          <button onclick="openHistoryModal()" class="flex items-center gap-1 px-3 py-1.5 bg-[#FDF7ED] border border-[#F6E7C9] text-[#A98235] rounded-full text-xs font-bold transition shadow-2xs">
+            <i data-lucide="history" class="w-3.5 h-3.5"></i> <span id="historyBtnText">과거 배치 기록 보기 (0)</span>
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="exportToSheet()" class="flex items-center gap-1.5 px-4 py-2 bg-[#8B7355] hover:bg-[#786247] text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs transition">
+            <i data-lucide="table" class="w-4 h-4"></i> 구글 시트로 내보내기
+          </button>
+          <button onclick="saveToGas()" class="flex items-center gap-1.5 px-4 py-2 bg-[#436850] hover:bg-[#375642] text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs transition">
+            <i data-lucide="cloud" class="w-4 h-4"></i> 클라우드 저장
+          </button>
+        </div>
+      </div>
+
+      <!-- Classroom Desk Grid Arena -->
+      <div id="classroomBoard" class="p-6 sm:p-8 bg-white rounded-2xl border border-slate-200 overflow-x-auto space-y-6">
+        <div id="deskGridContainer" class="flex justify-center gap-8 max-w-5xl mx-auto"></div>
+        <div class="w-full py-3.5 bg-[#1F3327] text-white rounded-2xl flex items-center justify-center gap-2.5 font-bold text-xs sm:text-sm tracking-wide shadow-xs border border-emerald-950">
+          <span class="text-base">👨‍🏫</span>
+          <span>칠 판 / 교 탁 (교사 시점: 이쪽이 앞쪽 - 1열이 맨 아래입니다)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= STEP 3: SPECIAL CONDITIONS ================= -->
+    <section id="step3View" class="hidden bg-white rounded-3xl p-6 sm:p-8 border border-[#E2E8F0] shadow-xs space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
+        <div class="flex items-center gap-3">
+          <span class="w-8 h-8 rounded-full bg-[#E85B51] text-white flex items-center justify-center font-black text-sm">3</span>
+          <h2 class="text-lg font-bold text-[#1E293B]">특수 조건 지정 & 자리 뽑기</h2>
+        </div>
+        <button onclick="handleDrawSeats()" class="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#446A52] to-[#E85B51] hover:opacity-95 text-white rounded-xl text-sm font-bold shadow-xs transition transform hover:scale-102">
+          <i data-lucide="shuffle" class="w-4 h-4"></i>
+          <span>조건 적용 후 최종 자리 뽑기</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Card 1: 1. 그룹 분리 지정 (1:다 분리 & 전원 상호 분리) -->
+        <div class="p-5 rounded-2xl border border-[#FDE8E8] bg-white flex flex-col justify-between shadow-2xs space-y-4">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-sm text-slate-900 flex items-center gap-1.5">
+                <span class="text-[#E85B51]">👥</span> <span>1. 분리 지정 (1:다 & 그룹)</span>
+              </h3>
+              <span id="sepModeBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FDF2F2] text-[#E85B51] border border-[#FBD5D5]">1 : 다 분리</span>
+            </div>
+
+            <!-- Mode Switcher -->
+            <div class="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-xl text-xs font-bold">
+              <button type="button" id="sepTabBtn1" onclick="switchSepMode('one_to_many')" class="py-1.5 rounded-lg transition bg-white text-[#E85B51] shadow-2xs">
+                1 : 다 분리 (A vs 여러명)
+              </button>
+              <button type="button" id="sepTabBtn2" onclick="switchSepMode('all_pairs')" class="py-1.5 rounded-lg transition text-slate-500 hover:text-slate-800">
+                전원 상호 분리 (N:N)
+              </button>
+            </div>
+
+            <div id="sepOneToManySection" class="space-y-2.5">
+              <p class="text-[11px] text-slate-500 leading-relaxed">기준 학생 1명만 선택한 여러 학생들과 짝이 되지 않도록 분리합니다. (상대 학생들끼리는 짝꿍 가능)</p>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-700 mb-1">기준 학생 (예: A)</label>
+                <select id="sepOneToManyMainSelect" onchange="renderStep3()" class="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white focus:ring-1 focus:ring-[#E85B51]"></select>
+              </div>
+              <div>
+                <div class="text-[11px] font-semibold text-slate-700 mb-1.5">분리할 상대 학생들 선택 (예: B, C, D):</div>
+                <div id="sepOneToManyChecklist" class="border border-slate-200 rounded-xl p-2.5 max-h-36 overflow-y-auto grid grid-cols-2 gap-2 bg-slate-50/50 text-xs"></div>
+              </div>
+            </div>
+
+            <div id="sepAllPairsSection" class="hidden space-y-2.5">
+              <p class="text-[11px] text-slate-500 leading-relaxed">체크한 학생들 간에는 서로 단 한 명도 짝이나 근접해서 배치되지 않도록 일괄 분리합니다.</p>
+              <input id="groupNameInput" type="text" placeholder="그룹 이름 (예: A그룹)" class="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-1 focus:ring-[#E85B51] bg-slate-50 placeholder-slate-400 outline-none" />
+              <div>
+                <div class="text-[11px] font-semibold text-slate-700 mb-1.5">포함할 학생 선택:</div>
+                <div id="separationChecklist" class="border border-slate-200 rounded-xl p-2.5 max-h-36 overflow-y-auto grid grid-cols-2 gap-2 bg-slate-50/50 text-xs"></div>
+              </div>
+            </div>
+          </div>
+          <div class="space-y-3 pt-2">
+            <button id="sepAddBtn" onclick="handleAddGroupSeparation()" class="w-full py-2.5 bg-[#E85B51] hover:bg-[#D64A41] text-white rounded-xl text-xs font-bold transition shadow-2xs">+ 1:다 분리 조건 추가</button>
+            <div id="groupSeparationList" class="space-y-1.5 border-t border-slate-100 pt-2 text-xs"></div>
+          </div>
+        </div>
+
+        <!-- Card 2: 2. 1:1 필수 짝꿍 지정 -->
+        <div class="p-5 rounded-2xl border border-[#DCECE2] bg-white flex flex-col justify-between shadow-2xs space-y-4">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-sm text-slate-900 flex items-center gap-1.5">
+                <span class="text-[#436850]">🤝</span> <span>2. 1:1 필수 짝꿍 지정</span>
+              </h3>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#EAF3ED] text-[#436850] border border-[#CFE4D6]">필수 짝꿍</span>
+            </div>
+            <p class="text-[11px] text-slate-500 leading-relaxed">특정 두 학생이 반드시 서로 옆자리의 짝꿍이 되도록 지정합니다.</p>
+            <div class="space-y-2">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-700 mb-1">학생 1</label>
+                <select id="pairStudent1Select" class="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white focus:ring-1 focus:ring-[#436850]"></select>
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-700 mb-1">학생 2</label>
+                <select id="pairStudent2Select" class="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white focus:ring-1 focus:ring-[#436850]"></select>
+              </div>
+            </div>
+          </div>
+          <div class="space-y-3 pt-2">
+            <button onclick="handleAddMustPair()" class="w-full py-2.5 bg-[#436850] hover:bg-[#375642] text-white rounded-xl text-xs font-bold transition shadow-2xs">+ 1:1 짝꿍 조건 추가</button>
+            <div id="mustPairList" class="space-y-1.5 border-t border-slate-100 pt-2 text-xs"></div>
+          </div>
+        </div>
+
+        <!-- Card 3: 3. 앞자리 / 맨 뒷자리 배려 설정 -->
+        <div class="p-5 rounded-2xl border border-[#F8EED9] bg-white flex flex-col justify-between shadow-2xs space-y-4">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-sm text-slate-900 flex items-center gap-1.5">
+                <span class="text-[#C29F57]">↕</span> <span>3. 앞자리 / 맨 뒷자리 배려 설정</span>
+              </h3>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FBF6EC] text-[#A98235] border border-[#F5E6C7]">위치 선호 고려</span>
+            </div>
+            <p class="text-[11px] text-slate-500 leading-relaxed">시력이 불편하거나 키가 큰 학생 등을 위해 맨 앞줄(1열) 혹은 맨 뒷줄에 우선 배치합니다.</p>
+            <div class="space-y-2">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-700 mb-1">대상 학생</label>
+                <select id="posStudentSelect" class="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white focus:ring-1 focus:ring-[#C29F57]"></select>
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-700 mb-1">배치 희망 위치</label>
+                <select id="posChoiceSelect" class="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white focus:ring-1 focus:ring-[#C29F57]">
+                  <option value="front_strict">👓 맨 앞줄 (1열 - 칠판 바로 앞) 필수</option>
+                  <option value="front_area">👀 앞쪽 영역 (1~2열 사이 랜덤 배치)</option>
+                  <option value="front_3rows">👀 앞쪽 영역 (1~3열 사이 랜덤 배치)</option>
+                  <option value="back_strict">🎒 맨 뒷줄 (가장 뒤쪽 행) 필수</option>
+                  <option value="back_area">🔍 뒷쪽 영역 (뒤쪽 행 랜덤 배치)</option>
+                  <option value="window_side">🪟 창가 쪽 (1분단 창가 자리)</option>
+                  <option value="door_side">🚪 복도/출입문 쪽 자리</option>
+                  <option value="center_group">🎯 가운데 분단 (중앙 시야 확보)</option>
+                  <option value="any">보통 (상관없음)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="space-y-3 pt-2">
+            <button onclick="handleAddPositionRule()" class="w-full py-2.5 bg-[#C29F57] hover:bg-[#AF8E46] text-white rounded-xl text-xs font-bold transition shadow-2xs">✓ 자리 위치 조건 적용</button>
+            <div id="positionRuleList" class="space-y-1.5 border-t border-slate-100 pt-2 text-xs"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= HISTORY MODAL ================= -->
+  <div id="historyModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+    <div class="bg-white rounded-3xl p-6 max-w-2xl w-full shadow-2xl border border-slate-100 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="font-bold text-base text-slate-800 flex items-center gap-2">
+          <i data-lucide="history" class="w-5 h-5 text-[#A98235]"></i> 과거 자리 배치 이력
+        </h3>
+        <div class="flex items-center gap-2 flex-wrap">
+          <label class="flex items-center gap-1.5 px-3 py-1.5 bg-[#FEF8ED] hover:bg-[#FBE3B8] text-[#9A6B1A] border border-[#FBE3B8] rounded-xl text-xs font-bold transition cursor-pointer shadow-2xs">
+            <i data-lucide="camera" class="w-4 h-4"></i>
+            <span id="camBtnText">📷 이미지로 등록</span>
+            <input type="file" accept="image/*" class="hidden" onchange="handleHistoryImageUpload(event)" />
+          </label>
+          <button onclick="clearAllHistory()" class="px-2.5 py-1 text-xs text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg font-bold transition">전체 기록 삭제</button>
+          <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-slate-700 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+      </div>
+      <div id="historyContainer" class="space-y-3 max-h-[60vh] overflow-y-auto pr-1"></div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT APPLICATION CORE -->
+  <script>
+    // State
+    let currentStep = 2;
+    let students = [
+      { id: 'st_1', studentNumber: 1, name: '곽한별', gender: 'F' },
+      { id: 'st_2', studentNumber: 2, name: '김가윤', gender: 'F' },
+      { id: 'st_3', studentNumber: 3, name: '김나연', gender: 'F' },
+      { id: 'st_4', studentNumber: 4, name: '김서현', gender: 'F' },
+      { id: 'st_5', studentNumber: 5, name: '마서영', gender: 'F' },
+      { id: 'st_6', studentNumber: 6, name: '맹예담', gender: 'F' },
+      { id: 'st_7', studentNumber: 7, name: '박시윤', gender: 'F' },
+      { id: 'st_8', studentNumber: 8, name: '신예원', gender: 'F' },
+      { id: 'st_9', studentNumber: 9, name: '이지율', gender: 'F' },
+      { id: 'st_10', studentNumber: 10, name: '이채빈', gender: 'F' },
+      { id: 'st_11', studentNumber: 11, name: '정하영', gender: 'F' },
+      { id: 'st_12', studentNumber: 12, name: '차윤설', gender: 'F' },
+      { id: 'st_14', studentNumber: 14, name: '황가영', gender: 'F' },
+      { id: 'st_15', studentNumber: 15, name: '황지영', gender: 'F' },
+      { id: 'st_16', studentNumber: 16, name: '강유찬', gender: 'M' },
+      { id: 'st_17', studentNumber: 17, name: '고민준', gender: 'M' },
+      { id: 'st_18', studentNumber: 18, name: '김도경', gender: 'M' },
+      { id: 'st_19', studentNumber: 19, name: '김민석', gender: 'M' },
+      { id: 'st_20', studentNumber: 20, name: '김민웅', gender: 'M' },
+      { id: 'st_21', studentNumber: 21, name: '김선율', gender: 'M' },
+      { id: 'st_22', studentNumber: 22, name: '김태훈', gender: 'M' },
+      { id: 'st_23', studentNumber: 23, name: '김한결', gender: 'M' },
+      { id: 'st_24', studentNumber: 24, name: '민규원', gender: 'M' },
+      { id: 'st_25', studentNumber: 25, name: '박찬휘', gender: 'M' },
+      { id: 'st_26', studentNumber: 26, name: '백시완', gender: 'M' },
+      { id: 'st_27', studentNumber: 27, name: '송병곤', gender: 'M' },
+      { id: 'st_28', studentNumber: 28, name: '윤희상', gender: 'M' },
+      { id: 'st_29', studentNumber: 29, name: '이호승', gender: 'M' },
+      { id: 'st_30', studentNumber: 30, name: '홍지후', gender: 'M' },
+    ];
+
+    let layout = {
+      groupsCount: 3,
+      rowsPerGroup: 5,
+      dateText: '2026년 10월',
+      genderRule: 'coed_male_left',
+      avoidPastDuplicates: true,
+      applySeparation: true
+    };
+
+    let arrangement = {
+      'seat_g1_r5_c0': null, 'seat_g1_r5_c1': 'st_23',
+      'seat_g1_r4_c0': 'st_22', 'seat_g1_r4_c1': 'st_10',
+      'seat_g1_r3_c0': 'st_19', 'seat_g1_r3_c1': 'st_9',
+      'seat_g1_r2_c0': 'st_18', 'seat_g1_r2_c1': 'st_6',
+      'seat_g1_r1_c0': 'st_28', 'seat_g1_r1_c1': 'st_7',
+
+      'seat_g2_r5_c0': 'st_21', 'seat_g2_r5_c1': 'st_12',
+      'seat_g2_r4_c0': 'st_20', 'seat_g2_r4_c1': 'st_5',
+      'seat_g2_r3_c0': 'st_24', 'seat_g2_r3_c1': 'st_15',
+      'seat_g2_r2_c0': 'st_29', 'seat_g2_r2_c1': 'st_4',
+      'seat_g2_r1_c0': 'st_16', 'seat_g2_r1_c1': 'st_2',
+
+      'seat_g3_r5_c0': 'st_30', 'seat_g3_r5_c1': 'st_14',
+      'seat_g3_r4_c0': 'st_26', 'seat_g3_r4_c1': 'st_1',
+      'seat_g3_r3_c0': 'st_27', 'seat_g3_r3_c1': 'st_8',
+      'seat_g3_r2_c0': 'st_17', 'seat_g3_r2_c1': 'st_11',
+      'seat_g3_r1_c0': 'st_25', 'seat_g3_r1_c1': 'st_3',
+    };
+
+    let pinnedSeats = {};
+    let isMasked = false;
+    let history = [];
+    let groupSeparations = [];
+    let mustPairs = [];
+    let positionPreferences = [];
+    let selectedSeatForSwap = null;
+
+    // Initialization
+    window.addEventListener('DOMContentLoaded', () => {
+      loadSavedData();
+      renderAll();
+      lucide.createIcons();
+    });
+
+    function renderAll() {
+      renderHeaderBadges();
+      renderStepNav();
+      renderStep1();
+      renderStep2();
+      renderStep3();
+      lucide.createIcons();
+    }
+
+    function switchStep(step) {
+      currentStep = step;
+      document.getElementById('step1View').classList.toggle('hidden', step !== 1);
+      document.getElementById('step2View').classList.toggle('hidden', step !== 2);
+      document.getElementById('step3View').classList.toggle('hidden', step !== 3);
+      renderStepNav();
+      lucide.createIcons();
+    }
+
+    function renderStepNav() {
+      for (let s = 1; s <= 3; s++) {
+        const btn = document.getElementById(`tabBtn${s}`);
+        const isActive = currentStep === s;
+        if (isActive) {
+          btn.className = 'py-3.5 px-6 rounded-2xl font-bold text-sm sm:text-base flex items-center justify-center gap-2.5 transition-all shadow-xs bg-[#436850] text-white';
+          btn.querySelector('span:first-child').className = 'w-6 h-6 rounded-full flex items-center justify-center text-xs font-black bg-white/25 text-white';
+        } else {
+          btn.className = 'py-3.5 px-6 rounded-2xl font-bold text-sm sm:text-base flex items-center justify-center gap-2.5 transition-all shadow-2xs bg-white hover:bg-slate-50 text-slate-700 border border-[#E5EBE5]';
+          btn.querySelector('span:first-child').className = 'w-6 h-6 rounded-full flex items-center justify-center text-xs font-black bg-[#EDF5F0] text-[#436850]';
+        }
+      }
+    }
+
+    function renderHeaderBadges() {
+      document.getElementById('headerStudentBadge').textContent = `등록 학생: ${students.length}명`;
+      const totalCond = groupSeparations.length + mustPairs.length + positionPreferences.length;
+      document.getElementById('headerConditionBadge').textContent = `배려 조건: ${totalCond}건`;
+      document.getElementById('headerHistoryBadge').textContent = `저장 기록: ${history.length}건`;
+      document.getElementById('historyBtnText').textContent = `과거 배치 기록 보기 (${history.length})`;
+      document.getElementById('tab1Badge').textContent = `${students.length}명`;
+    }
+
+    // ================= STEP 1 RENDERING =================
+    function renderStep1() {
+      const grid = document.getElementById('studentsGrid');
+      grid.innerHTML = '';
+      const males = students.filter(s => s.gender === 'M').length;
+      const females = students.filter(s => s.gender === 'F').length;
+
+      document.getElementById('rosterTitle').textContent = `등록 학생 목록 (총 ${students.length}명)`;
+      document.getElementById('genderCounts').innerHTML = `
+        <span class="text-blue-600">♂ 남 ${males}명</span>
+        <span class="text-rose-600">♀ 여 ${females}명</span>
+      `;
+
+      students.forEach(st => {
+        const isMale = st.gender === 'M';
+        const chip = document.createElement('div');
+        chip.className = `flex items-center justify-between px-2.5 py-1.5 rounded-xl border text-xs select-none ${
+          isMale ? 'border-[#D2E7DC] bg-[#F4F9F6]' : 'border-[#F8D7DA] bg-[#FCF5F6]'
+        }`;
+        chip.innerHTML = `
+          <div class="flex items-center gap-1.5 truncate">
+            <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${
+              isMale ? 'bg-[#E1EFE8] text-[#226E4A]' : 'bg-[#FCE5E8] text-[#B83244]'
+            }">${st.studentNumber}번</span>
+            <span class="font-bold text-slate-800 truncate">${st.name}</span>
+          </div>
+          <button onclick="deleteStudent('${st.id}')" class="text-slate-400 hover:text-rose-600 p-0.5"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+        `;
+        grid.appendChild(chip);
+      });
+    }
+
+    function handleAddSingle(e) {
+      e.preventDefault();
+      const nameInput = document.getElementById('singleNameInput');
+      const genderSelect = document.getElementById('singleGenderSelect');
+      const name = nameInput.value.trim();
+      if (!name) return;
+
+      const nextNum = students.length > 0 ? Math.max(...students.map(s => s.studentNumber)) + 1 : 1;
+      students.push({
+        id: 'st_' + Date.now(),
+        studentNumber: nextNum,
+        name: name,
+        gender: genderSelect.value
+      });
+      nameInput.value = '';
+      renderAll();
+    }
+
+    function handleBatchImport() {
+      const text = document.getElementById('batchTextarea').value.trim();
+      const mode = document.getElementById('batchGenderMode').value;
+      if (!text) return;
+
+      const lines = text.split(/[\r\n,]+/).map(s => s.trim()).filter(Boolean);
+      let nextNum = students.length > 0 ? Math.max(...students.map(s => s.studentNumber)) + 1 : 1;
+
+      lines.forEach(item => {
+        const parts = item.split(/\s+/).filter(Boolean);
+        if (parts.length === 0) return;
+        let name = parts[0];
+        let gender = 'M';
+        if (mode === 'female') gender = 'F';
+        else if (mode === 'auto') {
+          const last = name[name.length - 1];
+          if (['희', '아', '은', '연', '서', '율', '나', '원', '린', '유'].includes(last)) gender = 'F';
+        }
+        students.push({
+          id: 'st_' + Date.now() + Math.random().toString(36).substr(2, 4),
+          studentNumber: nextNum++,
+          name: name,
+          gender: gender
+        });
+      });
+
+      document.getElementById('batchTextarea').value = '';
+      renderAll();
+    }
+
+    function deleteStudent(id) {
+      students = students.filter(s => s.id !== id);
+      for (const k in arrangement) {
+        if (arrangement[k] === id) arrangement[k] = null;
+      }
+      renderAll();
+    }
+
+    function clearAllStudents() {
+      if (!confirm('등록된 모든 학생 명단을 삭제하시겠습니까?')) return;
+      students = [];
+      arrangement = {};
+      pinnedSeats = {};
+      renderAll();
+    }
+
+    function loadSampleStudents() {
+      students = [
+        { id: 'st_1', studentNumber: 1, name: '김철수', gender: 'M' },
+        { id: 'st_2', studentNumber: 2, name: '박민수', gender: 'M' },
+        { id: 'st_3', studentNumber: 3, name: '최지훈', gender: 'M' },
+        { id: 'st_4', studentNumber: 4, name: '강현우', gender: 'M' },
+        { id: 'st_5', studentNumber: 5, name: '윤서준', gender: 'M' },
+        { id: 'st_6', studentNumber: 6, name: '임도현', gender: 'M' },
+        { id: 'st_7', studentNumber: 7, name: '한지호', gender: 'M' },
+        { id: 'st_8', studentNumber: 8, name: '송우진', gender: 'M' },
+        { id: 'st_9', studentNumber: 9, name: '오승현', gender: 'M' },
+        { id: 'st_10', studentNumber: 10, name: '배건우', gender: 'M' },
+        { id: 'st_11', studentNumber: 11, name: '이영희', gender: 'F' },
+        { id: 'st_12', studentNumber: 12, name: '최지우', gender: 'F' },
+        { id: 'st_13', studentNumber: 13, name: '강서아', gender: 'F' },
+        { id: 'st_14', studentNumber: 14, name: '윤하은', gender: 'F' },
+        { id: 'st_15', studentNumber: 15, name: '한수아', gender: 'F' },
+        { id: 'st_16', studentNumber: 16, name: '임지아', gender: 'F' },
+        { id: 'st_17', studentNumber: 17, name: '송유나', gender: 'F' },
+        { id: 'st_18', studentNumber: 18, name: '오채원', gender: 'F' },
+        { id: 'st_19', studentNumber: 19, name: '배다은', gender: 'F' },
+        { id: 'st_20', studentNumber: 20, name: '신서윤', gender: 'F' },
+      ];
+      renderAll();
+    }
+
+    // ================= STEP 2: CLASSROOM RENDERING =================
+    function renderStep2() {
+      const container = document.getElementById('deskGridContainer');
+      container.innerHTML = '';
+      const studentMap = new Map(students.map(s => [s.id, s]));
+
+      for (let g = 1; g <= layout.groupsCount; g++) {
+        const colDiv = document.createElement('div');
+        colDiv.className = 'flex flex-col gap-4 flex-1 max-w-xs';
+
+        for (let r = layout.rowsPerGroup; r >= 1; r--) {
+          const s0Id = `seat_g${g}_r${r}_c0`;
+          const s1Id = `seat_g${g}_r${r}_c1`;
+          const st0 = arrangement[s0Id] ? studentMap.get(arrangement[s0Id]) : null;
+          const st1 = arrangement[s1Id] ? studentMap.get(arrangement[s1Id]) : null;
+
+          const pairBox = document.createElement('div');
+          pairBox.className = 'p-2 bg-[#FBFDFB] rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between gap-2';
+
+          pairBox.appendChild(createDeskCard(s0Id, st0));
+          pairBox.appendChild(createDeskCard(s1Id, st1));
+          colDiv.appendChild(pairBox);
+        }
+        container.appendChild(colDiv);
+      }
+    }
+
+    function createDeskCard(seatId, student) {
+      const card = document.createElement('div');
+      const isSelected = selectedSeatForSwap === seatId;
+      const isPinned = !!pinnedSeats[seatId];
+
+      if (!student) {
+        card.className = `w-full h-24 rounded-xl border border-dashed border-slate-300 bg-white hover:bg-slate-50 flex items-center justify-center text-slate-400 text-xs font-semibold select-none cursor-pointer transition ${
+          isSelected ? 'ring-2 ring-[#436850] bg-emerald-50' : ''
+        }`;
+        card.textContent = '빈자리';
+        card.onclick = () => handleDeskClick(seatId);
+        return card;
+      }
+
+      const isMale = student.gender === 'M';
+      card.className = `w-full h-24 rounded-xl p-2.5 flex flex-col justify-between cursor-pointer select-none transition-all duration-100 ${
+        isMale ? 'bg-[#F2F9F5] border border-[#CDE3D8] hover:border-[#96C7AE]' : 'bg-[#FCF4F5] border border-[#F8D8DC] hover:border-[#F0AEB6]'
+      } ${isSelected ? 'ring-3 ring-[#436850] shadow-md scale-102' : 'shadow-2xs hover:shadow-xs'}`;
+
+      card.innerHTML = `
+        <div class="flex items-center justify-between">
+          <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${
+            isMale ? 'bg-[#E1EFE8] text-[#226E4A]' : 'bg-[#FCE5E8] text-[#B83244]'
+          }">${student.studentNumber}번</span>
+          <button type="button" class="text-slate-400 hover:text-amber-600 transition" onclick="event.stopPropagation(); togglePin('${seatId}')">
+            <i data-lucide="${isPinned ? 'lock' : 'unlock'}" class="w-3.5 h-3.5 ${isPinned ? 'text-amber-600 fill-amber-600' : 'opacity-40'}"></i>
+          </button>
+        </div>
+        <div class="text-center font-black text-slate-800 text-base sm:text-lg tracking-tight truncate my-auto py-1">
+          ${isMasked ? '???' : student.name}
+        </div>
+      `;
+
+      card.onclick = () => handleDeskClick(seatId);
+      return card;
+    }
+
+    function handleDeskClick(seatId) {
+      if (selectedSeatForSwap) {
+        if (selectedSeatForSwap !== seatId) {
+          const temp = arrangement[selectedSeatForSwap] || null;
+          arrangement[selectedSeatForSwap] = arrangement[seatId] || null;
+          arrangement[seatId] = temp;
+        }
+        selectedSeatForSwap = null;
+      } else {
+        selectedSeatForSwap = seatId;
+      }
+      renderStep2();
+      lucide.createIcons();
+    }
+
+    function togglePin(seatId) {
+      if (pinnedSeats[seatId]) delete pinnedSeats[seatId];
+      else if (arrangement[seatId]) pinnedSeats[seatId] = arrangement[seatId];
+      renderStep2();
+      lucide.createIcons();
+    }
+
+    function unpinAllSeats() {
+      pinnedSeats = {};
+      renderStep2();
+      lucide.createIcons();
+    }
+
+    function toggleMasked() {
+      isMasked = !isMasked;
+      document.getElementById('maskBtnText').textContent = isMasked ? '이름 보이기' : '전체 숨기기';
+      renderStep2();
+    }
+
+    function updateGroupCount(val) {
+      layout.groupsCount = parseInt(val, 10);
+      renderStep2();
+      lucide.createIcons();
+    }
+
+    function updateRowCount(val) {
+      layout.rowsPerGroup = parseInt(val, 10);
+      renderStep2();
+      lucide.createIcons();
+    }
+
+    let gasSepMode = 'one_to_many';
+    function switchSepMode(mode) {
+      gasSepMode = mode;
+      document.getElementById('sepOneToManySection').classList.toggle('hidden', mode !== 'one_to_many');
+      document.getElementById('sepAllPairsSection').classList.toggle('hidden', mode !== 'all_pairs');
+      document.getElementById('sepModeBadge').textContent = mode === 'one_to_many' ? '1 : 다 분리' : '무리 분리';
+      document.getElementById('sepAddBtn').textContent = mode === 'one_to_many' ? '+ 1:다 분리 조건 추가' : '+ 전원 상호 분리 추가';
+      document.getElementById('sepTabBtn1').className = mode === 'one_to_many' ? 'py-1.5 rounded-lg transition bg-white text-[#E85B51] shadow-2xs' : 'py-1.5 rounded-lg transition text-slate-500 hover:text-slate-800';
+      document.getElementById('sepTabBtn2').className = mode === 'all_pairs' ? 'py-1.5 rounded-lg transition bg-white text-[#E85B51] shadow-2xs' : 'py-1.5 rounded-lg transition text-slate-500 hover:text-slate-800';
+      renderStep3();
+    }
+
+    // ================= STEP 3: SPECIAL CONDITIONS =================
+    function renderStep3() {
+      // 1. One-to-many Main select & checklist
+      const mainSel = document.getElementById('sepOneToManyMainSelect');
+      const selectedMain = mainSel.value;
+      mainSel.innerHTML = '<option value="">선택</option>';
+      students.forEach(st => {
+        mainSel.innerHTML += `<option value="${st.id}" ${st.id === selectedMain ? 'selected' : ''}>${st.studentNumber}번 ${st.name}</option>`;
+      });
+
+      const otmList = document.getElementById('sepOneToManyChecklist');
+      otmList.innerHTML = '';
+      students.filter(st => st.id !== mainSel.value).forEach(st => {
+        const lbl = document.createElement('label');
+        lbl.className = 'flex items-center gap-1.5 cursor-pointer text-slate-700 truncate select-none hover:text-slate-900';
+        lbl.innerHTML = `
+          <input type="checkbox" value="${st.id}" class="sep-otm-check rounded text-[#E85B51]" />
+          <span class="truncate">${st.studentNumber}번 ${st.name}</span>
+        `;
+        otmList.appendChild(lbl);
+      });
+
+      // All pairs checklist
+      const sepList = document.getElementById('separationChecklist');
+      sepList.innerHTML = '';
+      students.forEach(st => {
+        const lbl = document.createElement('label');
+        lbl.className = 'flex items-center gap-1.5 cursor-pointer text-slate-700 truncate select-none hover:text-slate-900';
+        lbl.innerHTML = `
+          <input type="checkbox" value="${st.id}" class="sep-check rounded text-[#E85B51]" />
+          <span class="truncate">${st.studentNumber}번 ${st.name}</span>
+        `;
+        sepList.appendChild(lbl);
+      });
+
+      // Render Active Group Separations
+      const activeGroups = document.getElementById('groupSeparationList');
+      activeGroups.innerHTML = groupSeparations.length ? '<div class="text-[10px] font-bold text-slate-400">설정된 분리 조건:</div>' : '';
+      groupSeparations.forEach((g, idx) => {
+        const item = document.createElement('div');
+        item.className = 'flex items-center justify-between p-2 bg-rose-50/60 border border-rose-100 rounded-lg text-xs';
+        const names = g.studentIds.map(id => students.find(s => s.id === id)?.name).join(', ');
+        if (g.type === 'one_to_many' && g.targetStudentId) {
+          const mainName = students.find(s => s.id === g.targetStudentId)?.name || '기준';
+          item.innerHTML = `
+            <div class="truncate pr-2">
+              <span class="inline-block px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-800 font-bold text-[10px] mr-1">1:다</span>
+              <strong class="text-rose-900">${mainName}</strong> <span class="text-rose-500 mx-1">⚔️</span> <span class="text-slate-600">${names}</span>
+            </div>
+            <button onclick="groupSeparations.splice(${idx}, 1); renderStep3();" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+          `;
+        } else {
+          item.innerHTML = `
+            <div class="truncate pr-2">
+              <span class="inline-block px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-800 font-bold text-[10px] mr-1">그룹</span>
+              <strong class="text-rose-900">${g.name}:</strong> <span class="text-slate-600">${names}</span>
+            </div>
+            <button onclick="groupSeparations.splice(${idx}, 1); renderStep3();" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+          `;
+        }
+        activeGroups.appendChild(item);
+      });
+
+      // 2. Must-Pair Selects
+      const p1 = document.getElementById('pairStudent1Select');
+      const p2 = document.getElementById('pairStudent2Select');
+      p1.innerHTML = '<option value="">선택</option>';
+      p2.innerHTML = '<option value="">선택</option>';
+      students.forEach(st => {
+        p1.innerHTML += `<option value="${st.id}">${st.studentNumber}번 ${st.name}</option>`;
+        p2.innerHTML += `<option value="${st.id}">${st.studentNumber}번 ${st.name}</option>`;
+      });
+
+      // Render Active Must-Pairs
+      const activePairs = document.getElementById('mustPairList');
+      activePairs.innerHTML = mustPairs.length ? '<div class="text-[10px] font-bold text-slate-400">지정된 1:1 짝꿍:</div>' : '';
+      mustPairs.forEach((p, idx) => {
+        const s1 = students.find(s => s.id === p.student1Id)?.name;
+        const s2 = students.find(s => s.id === p.student2Id)?.name;
+        const item = document.createElement('div');
+        item.className = 'flex items-center justify-between p-2 bg-emerald-50/60 border border-emerald-100 rounded-lg text-xs';
+        item.innerHTML = `
+          <span class="font-semibold text-slate-800">${s1} 🤝 ${s2}</span>
+          <button onclick="mustPairs.splice(${idx}, 1); renderStep3();" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        `;
+        activePairs.appendChild(item);
+      });
+
+      // 3. Position Select
+      const posSel = document.getElementById('posStudentSelect');
+      posSel.innerHTML = '<option value="">선택</option>';
+      students.forEach(st => {
+        posSel.innerHTML += `<option value="${st.id}">${st.studentNumber}번 ${st.name}</option>`;
+      });
+
+      const posLabelMap = {
+        front_strict: '맨 앞줄 (1열 필수)',
+        front_area: '앞쪽 영역 (1~2열)',
+        front_3rows: '앞쪽 영역 (1~3열)',
+        back_strict: '맨 뒷줄 (최후열 필수)',
+        back_area: '뒷쪽 영역 (뒤쪽 행)',
+        window_side: '창가 쪽 (1분단)',
+        door_side: '복도/출입문 쪽',
+        center_group: '가운데 분단',
+        any: '보통 (상관없음)'
+      };
+
+      const activePos = document.getElementById('positionRuleList');
+      activePos.innerHTML = positionPreferences.length ? '<div class="text-[10px] font-bold text-slate-400">설정된 위치 배려:</div>' : '';
+      positionPreferences.forEach((pos, idx) => {
+        const stName = students.find(s => s.id === pos.studentId)?.name;
+        const item = document.createElement('div');
+        item.className = 'flex items-center justify-between p-2 bg-amber-50/60 border border-amber-100 rounded-lg text-xs';
+        item.innerHTML = `
+          <span class="font-semibold text-slate-800">${stName}: <span class="text-amber-900 font-medium">${posLabelMap[pos.position] || pos.position}</span></span>
+          <button onclick="positionPreferences.splice(${idx}, 1); renderStep3();" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        `;
+        activePos.appendChild(item);
+      });
+
+      renderHeaderBadges();
+      lucide.createIcons();
+    }
+
+    function handleAddGroupSeparation() {
+      if (gasSepMode === 'one_to_many') {
+        const mainId = document.getElementById('sepOneToManyMainSelect').value;
+        if (!mainId) {
+          alert('기준 학생을 선택해 주세요.');
+          return;
+        }
+        const checkedBoxes = document.querySelectorAll('.sep-otm-check:checked');
+        const ids = Array.from(checkedBoxes).map(b => b.value);
+        if (ids.length === 0) {
+          alert('분리할 상대 학생을 1명 이상 선택해 주세요.');
+          return;
+        }
+        const mainStudent = students.find(s => s.id === mainId);
+        const name = (mainStudent ? mainStudent.name : '기준학생') + ' 1:다 분리';
+        groupSeparations.push({
+          id: 'grp_' + Date.now(),
+          name,
+          type: 'one_to_many',
+          targetStudentId: mainId,
+          studentIds: ids
+        });
+        document.getElementById('sepOneToManyMainSelect').value = '';
+        renderStep3();
+      } else {
+        const name = document.getElementById('groupNameInput').value.trim() || `그룹 ${groupSeparations.length + 1}`;
+        const checkedBoxes = document.querySelectorAll('.sep-check:checked');
+        const ids = Array.from(checkedBoxes).map(b => b.value);
+        if (ids.length < 2) {
+          alert('분리할 학생을 최소 2명 이상 선택해 주세요.');
+          return;
+        }
+        groupSeparations.push({ id: 'grp_' + Date.now(), name, type: 'all_pairs', studentIds: ids });
+        document.getElementById('groupNameInput').value = '';
+        renderStep3();
+      }
+    }
+
+    function handleAddMustPair() {
+      const s1 = document.getElementById('pairStudent1Select').value;
+      const s2 = document.getElementById('pairStudent2Select').value;
+      if (!s1 || !s2 || s1 === s2) {
+        alert('서로 다른 두 명의 학생을 선택해 주세요.');
+        return;
+      }
+      mustPairs.push({ id: 'pair_' + Date.now(), student1Id: s1, student2Id: s2 });
+      renderStep3();
+    }
+
+    function handleAddPositionRule() {
+      const stId = document.getElementById('posStudentSelect').value;
+      const pos = document.getElementById('posChoiceSelect').value;
+      if (!stId) {
+        alert('대상 학생을 선택해 주세요.');
+        return;
+      }
+      positionPreferences = positionPreferences.filter(p => p.studentId !== stId);
+      positionPreferences.push({ id: 'pos_' + Date.now(), studentId: stId, position: pos });
+      renderStep3();
+    }
+
+    // ================= SMART SEATING ALGORITHM (CSP & ANNEALING) =================
+    function handleDrawSeats() {
+      // Save current as previous arrangement
+      const previousSeats = { ...arrangement };
+
+      // 1. Gather all desk slots
+      const deskSlots = [];
+      const deskPairs = [];
+      for (let r = 1; r <= layout.rowsPerGroup; r++) {
+        for (let g = 1; g <= layout.groupsCount; g++) {
+          const s0 = `seat_g${g}_r${r}_c0`;
+          const s1 = `seat_g${g}_r${r}_c1`;
+          deskSlots.push({ id: s0, row: r, group: g, col: 0 });
+          deskSlots.push({ id: s1, row: r, group: g, col: 1 });
+          deskPairs.push([s0, s1]);
+        }
+      }
+
+      if (deskSlots.length < students.length) {
+        alert(`배치 가능한 책상(${deskSlots.length}개)이 학생 수(${students.length}명)보다 적습니다. 분단 수를 늘려주세요.`);
+        return;
+      }
+
+      // 2. Identify strict & soft historical constraints
+      const canonicalPair = (a, b) => a < b ? `${a}:::${b}` : `${b}:::${a}`;
+      const immediatePastPairs = new Set();
+      deskPairs.forEach(([s0, s1]) => {
+        const st0 = previousSeats[s0];
+        const st1 = previousSeats[s1];
+        if (st0 && st1) immediatePastPairs.add(canonicalPair(st0, st1));
+      });
+      if (history.length > 0 && history[0].pairs) {
+        history[0].pairs.forEach(([a, b]) => immediatePastPairs.add(canonicalPair(a, b)));
+      }
+
+      const olderPastPairsCount = new Map();
+      if (history.length > 1) {
+        history.slice(1).forEach(h => {
+          if (h.pairs) h.pairs.forEach(([a, b]) => {
+            const k = canonicalPair(a, b);
+            olderPastPairsCount.set(k, (olderPastPairsCount.get(k) || 0) + 1);
+          });
+        });
+      }
+
+      // Group separation pairs
+      const sepPairs = new Set();
+      groupSeparations.forEach(g => {
+        if (g.type === 'one_to_many' && g.targetStudentId) {
+          const mainId = g.targetStudentId;
+          g.studentIds.forEach(targetId => {
+            if (targetId !== mainId) sepPairs.add(canonicalPair(mainId, targetId));
+          });
+        } else {
+          for (let i = 0; i < g.studentIds.length; i++) {
+            for (let j = i + 1; j < g.studentIds.length; j++) {
+              sepPairs.add(canonicalPair(g.studentIds[i], g.studentIds[j]));
+            }
+          }
+        }
+      });
+
+      // Fixed seats
+      const unpinnedSlots = deskSlots.filter(s => !pinnedSeats[s.id]);
+      const pinnedStIds = new Set(Object.values(pinnedSeats));
+      const unpinnedStudents = students.filter(s => !pinnedStIds.has(s.id));
+
+      const evaluate = (assign) => {
+        let cost = 0;
+        // Check individual seats (previous seat avoidance & position preferences)
+        for (const [seatId, stId] of assign.entries()) {
+          if (!stId) continue;
+          const slot = deskSlots.find(s => s.id === seatId);
+          if (!slot) continue;
+
+          // 직전 자리 배치 금지
+          if (!pinnedSeats[seatId] && previousSeats[seatId] === stId) {
+            cost += 80000;
+          }
+
+          const posRule = positionPreferences.find(p => p.studentId === stId);
+          if (posRule) {
+            if (posRule.position === 'front_strict' && slot.row !== 1) cost += 40000 * (slot.row - 1);
+            else if (posRule.position === 'front_area' && slot.row > 2) cost += 20000 * (slot.row - 2);
+            else if (posRule.position === 'front_3rows' && slot.row > 3) cost += 20000 * (slot.row - 3);
+            else if (posRule.position === 'back_strict' && slot.row !== layout.rowsPerGroup) cost += 40000 * (layout.rowsPerGroup - slot.row);
+            else if (posRule.position === 'back_area' && slot.row < layout.rowsPerGroup - 1) cost += 20000 * (layout.rowsPerGroup - 1 - slot.row);
+            else if (posRule.position === 'window_side' && slot.group !== 1) cost += 25000 * (slot.group - 1);
+            else if (posRule.position === 'door_side' && slot.group !== layout.groupsCount) cost += 25000 * (layout.groupsCount - slot.group);
+            else if (posRule.position === 'center_group') {
+              const cg = Math.ceil(layout.groupsCount / 2);
+              if (slot.group !== cg) cost += 25000 * Math.abs(slot.group - cg);
+            }
+          }
+
+          // 성별 매칭 좌우 고정
+          const stObj = students.find(s => s.id === stId);
+          if (stObj) {
+            if (layout.genderRule === 'coed_male_left') {
+              if (slot.col === 0 && stObj.gender !== 'M') cost += 80000;
+              if (slot.col === 1 && stObj.gender !== 'F') cost += 80000;
+            } else if (layout.genderRule === 'coed_female_left') {
+              if (slot.col === 0 && stObj.gender !== 'F') cost += 80000;
+              if (slot.col === 1 && stObj.gender !== 'M') cost += 80000;
+            }
+          }
+        }
+
+        // Check pairs
+        deskPairs.forEach(([s0, s1]) => {
+          const st0 = assign.get(s0);
+          const st1 = assign.get(s1);
+          if (st0 && st1) {
+            const k = canonicalPair(st0, st1);
+            // 직전 짝꿍 완전 필수 배제
+            if (immediatePastPairs.has(k)) cost += 500000;
+            // 과거 배치기록 짝꿍 최대한 배제
+            if (olderPastPairsCount.has(k)) cost += 50000 * olderPastPairsCount.get(k);
+            // 그룹 분리
+            if (sepPairs.has(k)) cost += 300000;
+            // 1:1 필수 짝꿍
+            mustPairs.forEach(mp => {
+              if ((st0 === mp.student1Id && st1 === mp.student2Id) || (st0 === mp.student2Id && st1 === mp.student1Id)) {
+                cost -= 30000;
+              }
+            });
+
+            // 성별 규칙
+            const st0Obj = students.find(s => s.id === st0);
+            const st1Obj = students.find(s => s.id === st1);
+            if (st0Obj && st1Obj) {
+              if (layout.genderRule === 'coed_male_left' && (st0Obj.gender !== 'M' || st1Obj.gender !== 'F')) cost += 80000;
+              if (layout.genderRule === 'coed_female_left' && (st0Obj.gender !== 'F' || st1Obj.gender !== 'M')) cost += 80000;
+              if (layout.genderRule === 'same_gender' && st0Obj.gender !== st1Obj.gender) cost += 80000;
+            }
+          }
+        });
+
+        return cost;
+      };
+
+      // Simulated Annealing
+      let bestAssign = new Map();
+      let bestCost = Infinity;
+
+      for (let restart = 0; restart < 10; restart++) {
+        const curr = new Map();
+        for (const k in pinnedSeats) curr.set(k, pinnedSeats[k]);
+
+        const shuffledStudents = [...unpinnedStudents].sort(() => Math.random() - 0.5);
+        const shuffledSlots = [...unpinnedSlots].sort(() => Math.random() - 0.5);
+
+        shuffledSlots.forEach((slot, i) => {
+          curr.set(slot.id, i < shuffledStudents.length ? shuffledStudents[i].id : null);
+        });
+
+        let cost = evaluate(curr);
+        if (cost < bestCost) {
+          bestCost = cost;
+          bestAssign = new Map(curr);
+        }
+
+        let temp = 100.0;
+        for (let iter = 0; iter < 1200; iter++) {
+          if (unpinnedSlots.length < 2) break;
+          const idxA = Math.floor(Math.random() * unpinnedSlots.length);
+          let idxB = Math.floor(Math.random() * unpinnedSlots.length);
+          while (idxB === idxA) idxB = Math.floor(Math.random() * unpinnedSlots.length);
+
+          const sA = unpinnedSlots[idxA].id;
+          const sB = unpinnedSlots[idxB].id;
+          const vA = curr.get(sA);
+          const vB = curr.get(sB);
+
+          curr.set(sA, vB);
+          curr.set(sB, vA);
+          const nextCost = evaluate(curr);
+          const delta = nextCost - cost;
+
+          if (delta <= 0 || Math.random() < Math.exp(-delta / temp)) {
+            cost = nextCost;
+            if (cost < bestCost) {
+              bestCost = cost;
+              bestAssign = new Map(curr);
+              if (bestCost === 0) break;
+            }
+          } else {
+            curr.set(sA, vA);
+            curr.set(sB, vB);
+          }
+          temp *= 0.995;
+        }
+        if (bestCost === 0) break;
+      }
+
+      // Zero-unseated guarantee check
+      const nextArr = {};
+      deskSlots.forEach(slot => {
+        nextArr[slot.id] = bestAssign.get(slot.id) || null;
+      });
+
+      arrangement = nextArr;
+
+      // Confetti & transition
+      confetti({
+        particleCount: 120,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ['#436850', '#E85B51', '#C29F57']
+      });
+
+      switchStep(2);
+      renderStep2();
+    }
+
+    // ================= STORAGE & GOOGLE APPS SCRIPT SYNC =================
+    function saveToGas() {
+      const syncBtn = document.getElementById('syncStatusText');
+      syncBtn.textContent = '저장 중...';
+
+      // Record to history
+      const deskPairs = [];
+      for (let r = 1; r <= layout.rowsPerGroup; r++) {
+        for (let g = 1; g <= layout.groupsCount; g++) {
+          deskPairs.push([`seat_g${g}_r${r}_c0`, `seat_g${g}_r${r}_c1`]);
+        }
+      }
+      const pairList = [];
+      deskPairs.forEach(([s0, s1]) => {
+        if (arrangement[s0] && arrangement[s1]) pairList.push([arrangement[s0], arrangement[s1]]);
+      });
+
+      const historyRecord = {
+        id: 'arr_' + Date.now(),
+        title: `${layout.dateText} 자리 배치`,
+        date: new Date().toISOString(),
+        arrangement: { ...arrangement },
+        pairs: pairList
+      };
+
+      history.unshift(historyRecord);
+
+      const payload = JSON.stringify({
+        students,
+        layout,
+        arrangement,
+        pinnedSeats,
+        history,
+        groupSeparations,
+        mustPairs,
+        positionPreferences
+      });
+
+      localStorage.setItem('CLASSROOM_SEATING_DATA', payload);
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(() => {
+            syncBtn.textContent = '클라우드 저장 완료 ✓';
+            setTimeout(() => syncBtn.textContent = '구글 시트/클라우드 저장', 2000);
+            renderHeaderBadges();
+          })
+          .withFailureHandler(err => {
+            console.error(err);
+            syncBtn.textContent = '저장 실패 (로컬 보관됨)';
+          })
+          .saveClassroomData(payload);
+      } else {
+        syncBtn.textContent = '로컬 저장 완료 ✓';
+        setTimeout(() => syncBtn.textContent = '구글 시트/클라우드 저장', 2000);
+        renderHeaderBadges();
+      }
+    }
+
+    function loadSavedData() {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(res => {
+            if (res && res.success && res.data) {
+              applyLoadedData(res.data);
+            }
+          })
+          .loadClassroomData();
+      } else {
+        const local = localStorage.getItem('CLASSROOM_SEATING_DATA');
+        if (local) {
+          try { applyLoadedData(JSON.parse(local)); } catch(e){}
+        }
+      }
+    }
+
+    function applyLoadedData(d) {
+      if (d.students) students = d.students;
+      if (d.layout) layout = d.layout;
+      if (d.arrangement) arrangement = d.arrangement;
+      if (d.pinnedSeats) pinnedSeats = d.pinnedSeats;
+      if (d.history) history = d.history;
+      if (d.groupSeparations) groupSeparations = d.groupSeparations;
+      if (d.mustPairs) mustPairs = d.mustPairs;
+      if (d.positionPreferences) positionPreferences = d.positionPreferences;
+      renderAll();
+    }
+
+    function exportToSheet() {
+      const studentMap = new Map(students.map(s => [s.id, s]));
+      const matrix = [];
+
+      for (let r = layout.rowsPerGroup; r >= 1; r--) {
+        const rowData = [];
+        for (let g = 1; g <= layout.groupsCount; g++) {
+          const st0 = arrangement[`seat_g${g}_r${r}_c0`];
+          const st1 = arrangement[`seat_g${g}_r${r}_c1`];
+          rowData.push(st0 ? `${studentMap.get(st0).studentNumber}번 ${studentMap.get(st0).name}` : '빈자리');
+          rowData.push(st1 ? `${studentMap.get(st1).studentNumber}번 ${studentMap.get(st1).name}` : '빈자리');
+        }
+        matrix.push(rowData);
+      }
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(res => {
+            if (res.success) {
+              alert(`구글 스프레드시트에 성공적으로 저장되었습니다!\n시트명: ${res.sheetName}`);
+            } else {
+              alert('스프레드시트 내보내기 중 오류가 발생했습니다: ' + res.error);
+            }
+          })
+          .exportToSpreadsheet(layout.dateText, matrix);
+      } else {
+        alert('구글 앱스스크립트(GAS) 환경에서 실행 시 현재 스프레드시트에 배치표 탭이 즉시 자동 생성됩니다.');
+      }
+    }
+
+    function openHistoryModal() {
+      const modal = document.getElementById('historyModal');
+      const container = document.getElementById('historyContainer');
+      container.innerHTML = history.length ? '' : '<div class="text-center py-8 text-slate-400 text-sm">저장된 배치 이력이 없습니다.</div>';
+
+      history.forEach((h, idx) => {
+        const item = document.createElement('div');
+        item.className = 'bg-[#F8FAF8] rounded-2xl p-4 border border-[#E2E8F0] shadow-2xs flex items-center justify-between';
+        item.innerHTML = `
+          <div>
+            <div class="font-bold text-slate-800 text-sm">#${history.length - idx} ${h.title}</div>
+            <div class="text-[11px] text-slate-400">${new Date(h.date).toLocaleDateString('ko-KR')} · 짝꿍 ${h.pairs?.length || 0}쌍</div>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button onclick="restoreHistory(${idx})" class="px-3 py-1.5 bg-[#436850] hover:bg-[#375642] text-white rounded-lg text-xs font-semibold">배치 복원</button>
+            <button onclick="deleteHistoryItem(${idx})" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition" title="기록 삭제"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+
+      modal.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function deleteHistoryItem(idx) {
+      if (!history[idx]) return;
+      if (confirm(`'${history[idx].title}' 배치 기록을 삭제하시겠습니까?`)) {
+        history.splice(idx, 1);
+        renderHeaderBadges();
+        openHistoryModal();
+        saveToGas();
+      }
+    }
+
+    function clearAllHistory() {
+      if (confirm('저장된 모든 과거 자리 배치 이력을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.')) {
+        history = [];
+        renderHeaderBadges();
+        openHistoryModal();
+        saveToGas();
+      }
+    }
+
+    function closeHistoryModal() {
+      document.getElementById('historyModal').classList.add('hidden');
+    }
+
+    async function handleHistoryImageUpload(e) {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const btnText = document.getElementById('camBtnText');
+      if (btnText) btnText.textContent = 'AI 분석 중...';
+      try {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = async () => {
+          try {
+            const base64String = reader.result.split(',')[1];
+            const studentNamesList = students.map(s => `${s.studentNumber}번 ${s.name}`).join(', ');
+
+            let parsed = null;
+            try {
+              const res = await fetch('/api/analyze-seating-chart', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  imageBase64: base64String,
+                  mimeType: file.type || 'image/jpeg',
+                  studentsList: studentNamesList
+                })
+              });
+              const resJson = await res.json();
+              if (resJson.success && resJson.data) parsed = resJson.data;
+            } catch(fetchErr) {}
+
+            if (!parsed) {
+              let userKey = localStorage.getItem('GEMINI_API_KEY');
+              if (!userKey) {
+                userKey = prompt('구글 Gemini API 키를 입력해 주세요 (Google AI Studio 무료 API 키):');
+                if (userKey) localStorage.setItem('GEMINI_API_KEY', userKey.trim());
+              }
+              if (!userKey) throw new Error('API 키가 입력되지 않았습니다.');
+              const { GoogleGenAI } = await import('@google/genai');
+              const ai = new GoogleGenAI({ apiKey: userKey.trim() });
+              const response = await ai.models.generateContent({
+                model: 'gemini-3.8-flash',
+                contents: [
+                  { inlineData: { mimeType: file.type || 'image/jpeg', data: base64String } },
+                  { text: `이 교실 자리 배치표 이미지의 좌석 배치 구조를 분석해줘. 우리 반 학생 명단: [${studentNamesList}].
+각 분단 및 행별 seatId(예: seat_g1_r5_c0)와 학생 이름 매핑('arrangement'), 짝꿍 목록('pairs'), 제목('title')을 JSON으로 응답해줘. 예시:
+{"title": "2026년 10월 스마트 자리배치도", "arrangement": {"seat_g1_r5_c0": "빈자리", "seat_g1_r5_c1": "김한결"}, "pairs": [["김선율", "차윤설"]]}` }
+                ]
+              });
+              const jsonMatch = (response.text || '').match(/\{[\s\S]*\}/);
+              if (jsonMatch) parsed = JSON.parse(jsonMatch[0]);
+            }
+
+            if (parsed) {
+              const normalize = (str) => str ? str.replace(/^\d+번?[\s.]*/, '').replace(/\s+/g, '').trim() : '';
+              const nameToIdMap = new Map();
+              students.forEach(s => nameToIdMap.set(normalize(s.name), s.id));
+
+              const restoredArr = {};
+              if (parsed.arrangement) {
+                for (const [sId, nameVal] of Object.entries(parsed.arrangement)) {
+                  const sName = normalize(nameVal);
+                  const stId = sName && sName !== '빈자리' && sName !== '-' ? (nameToIdMap.get(sName) || null) : null;
+                  restoredArr[sId] = stId;
+                }
+              }
+
+              const validPairs = [];
+              if (parsed.pairs) {
+                for (const [nameA, nameB] of parsed.pairs) {
+                  const idA = nameToIdMap.get(normalize(nameA));
+                  const idB = nameToIdMap.get(normalize(nameB));
+                  if (idA && idB && idA !== idB) {
+                    const exists = validPairs.some(p => (p[0] === idA && p[1] === idB) || (p[0] === idB && p[1] === idA));
+                    if (!exists) validPairs.push([idA, idB]);
+                  }
+                }
+              }
+
+              if (Object.keys(restoredArr).length > 0 || validPairs.length > 0) {
+                const newArrangement = {
+                  id: 'arr_' + Date.now(),
+                  title: parsed.title || '이미지 등록 과거 배치',
+                  date: new Date().toISOString(),
+                  arrangement: restoredArr,
+                  pairs: validPairs
+                };
+                history.unshift(newArrangement);
+                arrangement = { ...restoredArr };
+                renderHeaderBadges();
+                openHistoryModal();
+                saveToGas();
+                switchStep(2);
+                renderStep2();
+                alert(`성공적으로 이미지에서 자리 배치와 짝꿍 정보를 복원하여 화면에 적용했습니다!`);
+              } else {
+                alert('이미지에서 일치하는 학생 이름을 찾지 못했습니다. 학생 이름과 명단이 일치하는지 확인해 주세요.');
+              }
+            } else {
+              alert('이미지 분석 결과를 파싱할 수 없습니다. 다시 시도해 주세요.');
+            }
+          } catch (innerErr) {
+            console.error(innerErr);
+            alert('이미지 분석 처리 중 오류가 발생했습니다: ' + innerErr.message);
+          } finally {
+            if (btnText) btnText.textContent = '📷 이미지로 과거배치 등록';
+            e.target.value = '';
+          }
+        };
+      } catch (err) {
+        console.error(err);
+        alert('파일을 읽는 중 오류가 발생했습니다.');
+        if (btnText) btnText.textContent = '📷 이미지로 과거배치 등록';
+        e.target.value = '';
+      }
+    }
+
+    function restoreHistory(idx) {
+      if (!history[idx]) return;
+      arrangement = { ...history[idx].arrangement };
+      closeHistoryModal();
+      switchStep(2);
+      renderStep2();
+    }
+  </script>
+</body>
+</html>

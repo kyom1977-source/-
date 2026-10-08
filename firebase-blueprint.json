@@ -1,0 +1,86 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Teacher profile information",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 100 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "email", "createdAt", "updatedAt"]
+    },
+    "Classroom": {
+      "title": "Classroom",
+      "description": "A school class managed by the teacher",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "teacherId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "grade": { "type": "string", "maxLength": 20 },
+        "academicYear": { "type": "number" },
+        "layoutConfig": { "type": "object" },
+        "updatedAt": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "teacherId", "name", "createdAt", "updatedAt"]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "Student in a classroom",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "classId": { "type": "string", "maxLength": 64 },
+        "teacherId": { "type": "string", "maxLength": 128 },
+        "studentNumber": { "type": "number" },
+        "name": { "type": "string", "maxLength": 50 },
+        "gender": { "type": "string", "enum": ["M", "F", "OTHER"] },
+        "frontRowPreference": { "type": "boolean" },
+        "avoidStudentIds": { "type": "array" },
+        "pinnedSeatId": { "type": "string", "maxLength": 50 },
+        "notes": { "type": "string", "maxLength": 200 },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "classId", "teacherId", "studentNumber", "name", "gender"]
+    },
+    "SeatingArrangement": {
+      "title": "SeatingArrangement",
+      "description": "Saved seating arrangement record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "classId": { "type": "string", "maxLength": 64 },
+        "teacherId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 100 },
+        "createdAt": { "type": "string" },
+        "seats": { "type": "array" },
+        "pairs": { "type": "array" },
+        "rulesSummary": { "type": "object" }
+      },
+      "required": ["id", "classId", "teacherId", "title", "createdAt", "seats"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Teacher profile document"
+    },
+    "/classes/{classId}": {
+      "schema": { "$ref": "#/entities/Classroom" },
+      "description": "Classrooms owned by teachers"
+    },
+    "/classes/{classId}/students/{studentId}": {
+      "schema": { "$ref": "#/entities/Student" },
+      "description": "Students belonging to a classroom"
+    },
+    "/classes/{classId}/arrangements/{arrangementId}": {
+      "schema": { "$ref": "#/entities/SeatingArrangement" },
+      "description": "Seating history and arrangements"
+    }
+  }
+}
