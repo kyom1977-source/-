@@ -96,8 +96,12 @@ export const ClassroomProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isCloudSyncing, setIsCloudSyncing] = useState(false);
 
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(2); // Default to Step 2 as in screenshot 1
-  const [currentClass, setCurrentClass] = useState<Classroom>(DEFAULT_CLASSROOM);
+  const [currentClass, setCurrentClass] = useState<Classroom>(() => {
+    return getLocalData<Classroom>('smart_seating_current_class_v3', DEFAULT_CLASSROOM);
+  });
   const [students, setStudents] = useState<Student[]>(() => {
+    const saved = getLocalData<Student[]>('smart_seating_students', []);
+    if (saved && saved.length > 0) return saved;
     return SAMPLE_STUDENTS_29.map(s => ({
       ...s,
       classId: DEFAULT_CLASSROOM.id,
@@ -105,16 +109,56 @@ export const ClassroomProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }));
   });
 
-  const [currentArrangement, setCurrentArrangement] = useState<Record<string, string | null>>(INITIAL_SEAT_ASSIGNMENT);
-  const [pinnedSeats, setPinnedSeats] = useState<Record<string, string>>({});
+  const [currentArrangement, setCurrentArrangement] = useState<Record<string, string | null>>(() => {
+    return getLocalData<Record<string, string | null>>('smart_seating_current_arrangement_v3', INITIAL_SEAT_ASSIGNMENT);
+  });
+  const [pinnedSeats, setPinnedSeats] = useState<Record<string, string>>(() => {
+    return getLocalData<Record<string, string>>('smart_seating_pinned_seats_v3', {});
+  });
   const [isMasked, setIsMasked] = useState(false);
-  const [history, setHistory] = useState<SeatingArrangement[]>([]);
+  const [history, setHistory] = useState<SeatingArrangement[]>(() => {
+    return getLocalData<SeatingArrangement[]>('smart_seating_history_v3', []);
+  });
 
   // Step 3 Rules
-  const [groupSeparations, setGroupSeparations] = useState<GroupSeparationRule[]>([]);
-  const [mustPairs, setMustPairs] = useState<PairRule[]>([]);
-  const [positionPreferences, setPositionPreferences] = useState<PositionRule[]>([]);
+  const [groupSeparations, setGroupSeparations] = useState<GroupSeparationRule[]>(() => {
+    return getLocalData<GroupSeparationRule[]>('smart_seating_group_separations_v3', []);
+  });
+  const [mustPairs, setMustPairs] = useState<PairRule[]>(() => {
+    return getLocalData<PairRule[]>('smart_seating_must_pairs_v3', []);
+  });
+  const [positionPreferences, setPositionPreferences] = useState<PositionRule[]>(() => {
+    return getLocalData<PositionRule[]>('smart_seating_position_preferences_v3', []);
+  });
   const [lastResult, setLastResult] = useState<SeatingResult | null>(null);
+
+  useEffect(() => {
+    setLocalData('smart_seating_current_class_v3', currentClass);
+  }, [currentClass]);
+
+  useEffect(() => {
+    setLocalData('smart_seating_current_arrangement_v3', currentArrangement);
+  }, [currentArrangement]);
+
+  useEffect(() => {
+    setLocalData('smart_seating_pinned_seats_v3', pinnedSeats);
+  }, [pinnedSeats]);
+
+  useEffect(() => {
+    setLocalData('smart_seating_history_v3', history);
+  }, [history]);
+
+  useEffect(() => {
+    setLocalData('smart_seating_group_separations_v3', groupSeparations);
+  }, [groupSeparations]);
+
+  useEffect(() => {
+    setLocalData('smart_seating_must_pairs_v3', mustPairs);
+  }, [mustPairs]);
+
+  useEffect(() => {
+    setLocalData('smart_seating_position_preferences_v3', positionPreferences);
+  }, [positionPreferences]);
 
   useEffect(() => {
     testConnection();

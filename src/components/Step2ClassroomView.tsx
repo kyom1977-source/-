@@ -106,11 +106,27 @@ export const Step2ClassroomView: React.FC<{
     setIsExporting(true);
     setIsExportModalOpen(false);
     try {
-      const canvas = await html2canvas(exportRef.current, {
+      const el = exportRef.current;
+      el.style.position = 'absolute';
+      el.style.left = '0px';
+      el.style.top = '0px';
+      el.style.zIndex = '99999';
+      el.style.opacity = '1';
+
+      const canvas = await html2canvas(el, {
         scale: 2,
         backgroundColor: '#FFFFFF',
         useCORS: true,
+        allowTaint: true,
+        logging: false,
       });
+
+      el.style.position = 'fixed';
+      el.style.left = '0';
+      el.style.top = '0';
+      el.style.opacity = '0';
+      el.style.zIndex = '-9999';
+
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       link.download = `${exportTitle.replace(/[\s/\\?%*:|"<>]+/g, '_')}.png`;
@@ -118,6 +134,7 @@ export const Step2ClassroomView: React.FC<{
       link.click();
     } catch (err) {
       console.error('Failed to export PNG', err);
+      alert('이미지 저장 중 오류가 발생했습니다. 다시 시도해 주세요.');
     } finally {
       setIsExporting(false);
     }
