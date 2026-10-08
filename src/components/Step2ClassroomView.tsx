@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { useClassroom } from '../context/ClassroomContext';
 import { generateSeatsGrid } from '../services/seatingAlgorithm';
 import { Student, GenderRuleType, DeskArrangementType, SeatingArrangement } from '../types';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 import {
   Calendar,
   Lock,
@@ -113,12 +113,10 @@ export const Step2ClassroomView: React.FC<{
       el.style.zIndex = '99999';
       el.style.opacity = '1';
 
-      const canvas = await html2canvas(el, {
-        scale: 2,
+      const dataUrl = await toPng(el, {
+        cacheBust: true,
         backgroundColor: '#FFFFFF',
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
+        pixelRatio: 3,
       });
 
       el.style.position = 'fixed';
@@ -127,7 +125,6 @@ export const Step2ClassroomView: React.FC<{
       el.style.opacity = '0';
       el.style.zIndex = '-9999';
 
-      const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       link.download = `${exportTitle.replace(/[\s/\\?%*:|"<>]+/g, '_')}.png`;
       link.href = dataUrl;
@@ -562,14 +559,14 @@ export const Step2ClassroomView: React.FC<{
 
       {/* Hidden export container captured by html2canvas with title banner at top */}
       <div style={{ position: 'fixed', left: 0, top: 0, opacity: 0, pointerEvents: 'none', zIndex: -9999 }}>
-        <div ref={exportRef} className="p-8 bg-white rounded-3xl space-y-6 w-[1100px]">
-          <h1 className="text-2xl font-black text-center text-slate-900 tracking-tight py-2">
+        <div ref={exportRef} className="p-6 bg-white rounded-3xl space-y-4 w-[1100px]">
+          <h1 className="text-2xl font-black font-gyeonggi text-center text-slate-900 tracking-tight py-1">
             {exportTitle}
           </h1>
-          <div className="flex justify-center gap-8 max-w-5xl mx-auto">
+          <div className="flex justify-center gap-6 max-w-5xl mx-auto">
             {groupIndices.map(groupIdx => {
               return (
-                <div key={`export-group-${groupIdx}`} className="flex flex-col gap-4 flex-1 max-w-xs">
+                <div key={`export-group-${groupIdx}`} className="flex flex-col gap-3 flex-1 max-w-xs">
                   {rowOrder.map(r => {
                     const seat0Id = `seat_g${groupIdx}_r${r}_c0`;
                     const seat1Id = `seat_g${groupIdx}_r${r}_c1`;
@@ -578,23 +575,35 @@ export const Step2ClassroomView: React.FC<{
                     return (
                       <div key={`export-pair-${r}-${groupIdx}`} className="p-2 bg-[#FBFDFB] rounded-2xl border border-slate-200 flex items-center justify-between gap-2">
                         {/* Left desk */}
-                        <div className={`w-full h-24 rounded-xl p-2.5 flex flex-col justify-between ${st0?.gender === 'M' ? 'bg-[#F2F9F5] border border-[#CDE3D8]' : 'bg-[#FCF4F5] border border-[#F8D8DC]'}`}>
-                          <div className="flex items-center justify-between">
-                            <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${st0?.gender === 'M' ? 'bg-[#E1EFE8] text-[#226E4A]' : 'bg-[#FCE5E8] text-[#B83244]'}`}>{st0 ? `${st0.studentNumber}번` : ''}</span>
+                        {st0 ? (
+                          <div className={`w-full h-20 rounded-xl p-2.5 flex flex-col justify-between ${st0.gender === 'M' ? 'bg-[#F2F9F5] border border-[#CDE3D8]' : 'bg-[#FCF4F5] border border-[#F8D8DC]'}`}>
+                            <div className="flex items-center justify-between">
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-black ${st0.gender === 'M' ? 'bg-[#E1EFE8] text-[#226E4A]' : 'bg-[#FCE5E8] text-[#B83244]'}`}>{st0.studentNumber}번</span>
+                            </div>
+                            <div className="text-center font-black font-gyeonggi text-slate-800 text-xl sm:text-2xl tracking-tight my-auto truncate">
+                              {st0.name}
+                            </div>
                           </div>
-                          <div className="text-center font-black text-slate-800 text-lg tracking-tight my-auto">
-                            {st0 ? st0.name : '빈자리'}
+                        ) : (
+                          <div className="w-full h-20 rounded-xl border border-slate-200 bg-slate-100/70 flex items-center justify-center text-slate-400 text-xs font-semibold">
+                            <span>빈자리</span>
                           </div>
-                        </div>
+                        )}
                         {/* Right desk */}
-                        <div className={`w-full h-24 rounded-xl p-2.5 flex flex-col justify-between ${st1?.gender === 'M' ? 'bg-[#F2F9F5] border border-[#CDE3D8]' : 'bg-[#FCF4F5] border border-[#F8D8DC]'}`}>
-                          <div className="flex items-center justify-between">
-                            <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${st1?.gender === 'M' ? 'bg-[#E1EFE8] text-[#226E4A]' : 'bg-[#FCE5E8] text-[#B83244]'}`}>{st1 ? `${st1.studentNumber}번` : ''}</span>
+                        {st1 ? (
+                          <div className={`w-full h-20 rounded-xl p-2.5 flex flex-col justify-between ${st1.gender === 'M' ? 'bg-[#F2F9F5] border border-[#CDE3D8]' : 'bg-[#FCF4F5] border border-[#F8D8DC]'}`}>
+                            <div className="flex items-center justify-between">
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-black ${st1.gender === 'M' ? 'bg-[#E1EFE8] text-[#226E4A]' : 'bg-[#FCE5E8] text-[#B83244]'}`}>{st1.studentNumber}번</span>
+                            </div>
+                            <div className="text-center font-black font-gyeonggi text-slate-800 text-xl sm:text-2xl tracking-tight my-auto truncate">
+                              {st1.name}
+                            </div>
                           </div>
-                          <div className="text-center font-black text-slate-800 text-lg tracking-tight my-auto">
-                            {st1 ? st1.name : '빈자리'}
+                        ) : (
+                          <div className="w-full h-20 rounded-xl border border-slate-200 bg-slate-100/70 flex items-center justify-center text-slate-400 text-xs font-semibold">
+                            <span>빈자리</span>
                           </div>
-                        </div>
+                        )}
                       </div>
                     );
                   })}
@@ -602,7 +611,7 @@ export const Step2ClassroomView: React.FC<{
               );
             })}
           </div>
-          <div className="w-full py-4 bg-[#1F3327] text-white rounded-2xl flex items-center justify-center gap-2 font-bold text-base tracking-wide">
+          <div className="w-full py-3 bg-[#1F3327] text-white rounded-xl flex items-center justify-center gap-2 font-bold text-sm tracking-wide">
             <span>👨‍🏫</span>
             <span>칠 판 / 교 탁</span>
           </div>
@@ -644,7 +653,7 @@ const DeskCard: React.FC<DeskCardProps> = ({
         onClick={onClick}
         onDragOver={onDragOver}
         onDrop={onDrop}
-        className={`w-full h-24 rounded-xl border border-dashed border-slate-300 bg-white hover:bg-slate-50 flex items-center justify-center text-slate-400 text-xs font-semibold select-none cursor-pointer transition ${
+        className={`w-full h-20 rounded-xl border border-slate-200 bg-slate-100/70 hover:bg-slate-100 flex items-center justify-center text-slate-400 text-xs font-semibold select-none cursor-pointer transition ${
           isSelected ? 'ring-2 ring-[#355E49] bg-emerald-50' : ''
         }`}
       >
@@ -662,7 +671,7 @@ const DeskCard: React.FC<DeskCardProps> = ({
       onDragOver={onDragOver}
       onDrop={onDrop}
       onClick={onClick}
-      className={`w-full h-24 rounded-xl p-2.5 flex flex-col justify-between cursor-pointer select-none transition-all duration-100 ${
+      className={`w-full h-20 rounded-xl p-2.5 flex flex-col justify-between cursor-pointer select-none transition-all duration-100 ${
         isMale
           ? 'bg-[#F2F9F5] border border-[#CDE3D8] hover:border-[#96C7AE]'
           : 'bg-[#FCF4F5] border border-[#F8D8DC] hover:border-[#F0AEB6]'
@@ -671,7 +680,7 @@ const DeskCard: React.FC<DeskCardProps> = ({
       {/* Top Header: Number and Pin Lock */}
       <div className="flex items-center justify-between">
         <span
-          className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
+          className={`px-1.5 py-0.5 rounded text-[10px] font-black ${
             isMale ? 'bg-[#E1EFE8] text-[#226E4A]' : 'bg-[#FCE5E8] text-[#B83244]'
           }`}
         >
@@ -688,15 +697,15 @@ const DeskCard: React.FC<DeskCardProps> = ({
           title={isPinned ? '고정석 해제' : '이 자리에 학생 고정'}
         >
           {isPinned ? (
-            <Lock className="w-3.5 h-3.5 text-amber-600 fill-amber-600" />
+            <Lock className="w-3 h-3 text-amber-600 fill-amber-600" />
           ) : (
-            <Unlock className="w-3.5 h-3.5 opacity-40 hover:opacity-100" />
+            <Unlock className="w-3 h-3 opacity-40 hover:opacity-100" />
           )}
         </button>
       </div>
 
       {/* Middle: Student Name */}
-      <div className="text-center font-black text-slate-800 text-lg sm:text-xl tracking-tight truncate my-auto py-1">
+      <div className="text-center font-black font-gyeonggi text-slate-800 text-xl sm:text-2xl tracking-tight truncate my-auto py-0.5">
         {isMasked ? '???' : student.name}
       </div>
     </div>

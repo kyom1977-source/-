@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'GyeonggiTitle';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_one@1.0/Gyeonggi_Title_Bold.woff') format('woff');
+  font-weight: bold;
+  font-style: normal;
+}
+
+.font-gyeonggi {
+  font-family: 'GyeonggiTitle', sans-serif;
+}
+
 @layer base {
   body {
     font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;

@@ -26,6 +26,7 @@ import {
   saveStudents,
   fetchArrangements,
   saveArrangement,
+  saveSpecialConditions,
   getLocalData,
   setLocalData
 } from '../services/storage';
@@ -80,6 +81,7 @@ interface ClassroomContextType {
   deletePositionRule: (id: string) => void;
   executeSeatingDraw: () => SeatingResult;
   saveArrangementToCloud: () => Promise<void>;
+  saveSpecialConditionsToCloud: () => Promise<void>;
   restoreFromHistory: (arrangement: SeatingArrangement) => void;
   deleteHistoryItem: (arrangementId: string) => Promise<void>;
   clearAllHistory: () => Promise<void>;
@@ -447,6 +449,25 @@ export const ClassroomProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setHistory(prev => [record, ...prev]);
   };
 
+  const saveSpecialConditionsToCloud = async () => {
+    const teacherId = user?.uid || 'guest_teacher';
+    await saveSpecialConditions(currentClass.id, groupSeparations, mustPairs, positionPreferences, teacherId);
+
+    if (typeof window !== 'undefined' && (window as any).google?.script?.run) {
+      try {
+        const payload = JSON.stringify({
+          groupSeparations,
+          mustPairs,
+          positionPreferences,
+          timestamp: new Date().toISOString()
+        });
+        (window as any).google.script.run.saveSpecialConditionsToSpreadsheet(payload);
+      } catch (e) {
+        console.warn('GAS spreadsheet sync warning:', e);
+      }
+    }
+  };
+
   const loginWithGoogleHandler = async () => {
     try {
       await loginWithGoogle();
@@ -495,6 +516,7 @@ export const ClassroomProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         deletePositionRule,
         executeSeatingDraw,
         saveArrangementToCloud,
+        saveSpecialConditionsToCloud,
         restoreFromHistory,
         deleteHistoryItem,
         clearAllHistory,

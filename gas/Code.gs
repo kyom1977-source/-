@@ -45,6 +45,59 @@ function saveClassroomData(payloadJson) {
 }
 
 /**
+ * 배려 조건 및 특수 설정을 구글 스프레드시트에 저장
+ */
+function saveSpecialConditionsToSpreadsheet(payloadJson) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss) {
+      ss = SpreadsheetApp.create('스마트_학급_배려조건_설정');
+    }
+    var sheet = ss.getSheetByName('배려조건_설정') || ss.insertSheet('배려조건_설정');
+    sheet.clear();
+
+    sheet.getRange(1, 1).setValue('🛡️ 스마트 학급 배려조건 및 특수 규칙 설정');
+    sheet.getRange(1, 1).setFontSize(14).setFontWeight('bold');
+
+    var data = JSON.parse(payloadJson);
+    var row = 3;
+
+    sheet.getRange(row, 1).setValue('구분');
+    sheet.getRange(row, 2).setValue('설정 내용 / 상세 정보');
+    sheet.getRange(row, 1, 1, 2).setBackground('#355E49').setFontColor('#FFFFFF').setFontWeight('bold');
+    row++;
+
+    if (data.groupSeparations) {
+      data.groupSeparations.forEach(function(item) {
+        sheet.getRange(row, 1).setValue('그룹 분리');
+        sheet.getRange(row, 2).setValue(item.name + ' (학생 수: ' + item.studentIds.length + '명)');
+        row++;
+      });
+    }
+
+    if (data.mustPairs) {
+      data.mustPairs.forEach(function(item) {
+        sheet.getRange(row, 1).setValue('짝꿍 고정');
+        sheet.getRange(row, 2).setValue('학생 ID 1: ' + item.student1Id + ' / 학생 ID 2: ' + item.student2Id);
+        row++;
+      });
+    }
+
+    if (data.positionPreferences) {
+      data.positionPreferences.forEach(function(item) {
+        sheet.getRange(row, 1).setValue('위치 선호도');
+        sheet.getRange(row, 2).setValue('학생 ID: ' + item.studentId + ' -> 선호 위치: ' + item.position);
+        row++;
+      });
+    }
+
+    return { success: true, spreadsheetUrl: ss.getUrl() };
+  } catch (error) {
+    return { success: false, error: error.toString() };
+  }
+}
+
+/**
  * 현재 자리 배치표를 구글 스프레드시트 시트로 생성 및 서식 지정
  */
 function exportToSpreadsheet(sheetTitle, gridMatrix) {

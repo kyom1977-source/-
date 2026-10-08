@@ -226,3 +226,29 @@ export async function deleteArrangement(
     }
   }
 }
+
+export async function saveSpecialConditions(
+  classId: string,
+  groupSeparations: any[],
+  mustPairs: any[],
+  positionPreferences: any[],
+  teacherId: string
+): Promise<void> {
+  setLocalData('smart_seating_group_separations_v3', groupSeparations);
+  setLocalData('smart_seating_must_pairs_v3', mustPairs);
+  setLocalData('smart_seating_position_preferences_v3', positionPreferences);
+
+  if (teacherId && teacherId !== 'guest_teacher') {
+    const docPath = `classes/${classId}/rules/specialRules`;
+    try {
+      await setDoc(doc(db, 'classes', classId, 'rules', 'specialRules'), {
+        groupSeparations,
+        mustPairs,
+        positionPreferences,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, docPath);
+    }
+  }
+}

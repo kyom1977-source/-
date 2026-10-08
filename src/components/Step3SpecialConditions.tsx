@@ -10,7 +10,8 @@ import {
   Check,
   Trash2,
   Sparkles,
-  Glasses
+  Glasses,
+  Cloud
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -39,7 +40,16 @@ export const Step3SpecialConditions: React.FC = () => {
     addPositionRule,
     deletePositionRule,
     executeSeatingDraw,
+    saveSpecialConditionsToCloud,
   } = useClassroom();
+
+  const [rulesSavedToast, setRulesSavedToast] = useState(false);
+
+  const handleSaveRules = async () => {
+    await saveSpecialConditionsToCloud();
+    setRulesSavedToast(true);
+    setTimeout(() => setRulesSavedToast(false), 2500);
+  };
 
   // Card 1 Form State (Group Separation & 1:N Separation)
   const [sepMode, setSepMode] = useState<'one_to_many' | 'all_pairs'>('one_to_many');
@@ -145,15 +155,26 @@ export const Step3SpecialConditions: React.FC = () => {
           </h2>
         </div>
 
-        {/* Big Action Button with Green-to-Coral Gradient */}
-        <button
-          type="button"
-          onClick={handleFinalDraw}
-          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#446A52] to-[#E85B51] hover:opacity-95 text-white rounded-xl text-sm font-bold shadow-xs transition transform hover:scale-102"
-        >
-          <Shuffle className="w-4 h-4" />
-          <span>조건 적용 후 최종 자리 뽑기</span>
-        </button>
+        {/* Header Action Buttons */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={handleSaveRules}
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-[#355E49] hover:bg-[#2C4E3D] text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs transition"
+          >
+            <Cloud className="w-4 h-4" />
+            <span>{rulesSavedToast ? '배려조건 저장 완료!' : '배려조건 클라우드 저장'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleFinalDraw}
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#446A52] to-[#E85B51] hover:opacity-95 text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs transition transform hover:scale-102"
+          >
+            <Shuffle className="w-4 h-4" />
+            <span>조건 적용 후 최종 자리 뽑기</span>
+          </button>
+        </div>
       </div>
 
       {/* 3 Column Cards Layout */}
