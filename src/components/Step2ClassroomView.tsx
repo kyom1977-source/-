@@ -544,7 +544,7 @@ export const Step2ClassroomView: React.FC<{
       )}
 
       {/* Hidden export container captured by html2canvas with title banner at top */}
-      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+      <div style={{ position: 'fixed', left: 0, top: 0, opacity: 0, pointerEvents: 'none', zIndex: -9999 }}>
         <div ref={exportRef} className="p-8 bg-white rounded-3xl space-y-6 w-[1100px]">
           <h1 className="text-2xl font-black text-center text-slate-900 tracking-tight py-2">
             {exportTitle}

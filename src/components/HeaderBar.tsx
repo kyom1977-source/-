@@ -29,8 +29,8 @@ export const HeaderBar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
         {/* Logo & App Title */}
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#FCD34D] to-[#F59E0B] flex items-center justify-center text-white shadow-xs">
-            <Users className="w-6 h-6 stroke-[2.2] text-amber-950" />
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#FEF08A] to-[#FACC15] flex items-center justify-center text-amber-950 shadow-xs">
+            <Users className="w-6 h-6 stroke-[2.2] text-amber-900" />
           </div>
           <div>
             <h1 className="text-xl font-black text-[#1E293B] tracking-tight flex items-center gap-2">
